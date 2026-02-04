@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>XCraft</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="menu">
+  <h1>XCraft</h1>
+
+  <input id="username" placeholder="Username" maxlength="12" />
+
+  <select id="engine">
+    <option value="js">JavaScript Engine</option>
+    <option value="wasm">WebAssembly Engine</option>
+  </select>
+
+  <button id="start">Start Game</button>
+</div>
+
+<canvas id="game" width="600" height="400"></canvas>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script type="module" src="main.js"></script>
+
+</body>
+</html>

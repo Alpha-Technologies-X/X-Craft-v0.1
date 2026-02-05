@@ -90,6 +90,47 @@ function animate() {
   requestAnimationFrame(animate);
 
   if (player) {
+  // ===== GRAVITY =====
+  velocityY += gravity;
+  player.position.y += velocityY;
+
+  // Ground collision
+  if (player.position.y <= groundY) {
+    player.position.y = groundY;
+    velocityY = 0;
+    isOnGround = true;
+  } else {
+    isOnGround = false;
+  }
+
+  // ===== CAMERA FOLLOW =====
+  camera.position.x = player.position.x;
+  camera.position.y = player.position.y + 1.6;
+  camera.position.z = player.position.z;
+
+  camera.rotation.set(pitch, yaw, 0);
+
+  // ===== MOVEMENT =====
+  const speed = 0.05;
+  const forward = new THREE.Vector3(
+    Math.sin(yaw),
+    0,
+    Math.cos(yaw)
+  );
+  const right = new THREE.Vector3(
+    Math.sin(yaw + Math.PI / 2),
+    0,
+    Math.cos(yaw + Math.PI / 2)
+  );
+
+  if (keys['w']) player.position.addScaledVector(forward, speed);
+  if (keys['s']) player.position.addScaledVector(forward, -speed);
+  if (keys['a']) player.position.addScaledVector(right, -speed);
+  if (keys['d']) player.position.addScaledVector(right, speed);
+
+  // Face movement direction
+  player.rotation.y = yaw;
+}
     // Camera follows player
     camera.position.x = player.position.x;
     camera.position.y = player.position.y + 1.6;

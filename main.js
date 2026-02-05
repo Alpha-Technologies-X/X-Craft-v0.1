@@ -26,6 +26,13 @@ scene.add(new THREE.AmbientLight(0xffffff, 0.4));
 // ===== PLAYER LOAD =====
 let player;
 
+// ===== PHYSICS =====
+let velocityY = 0;
+const gravity = -0.015;
+const jumpStrength = 0.35;
+const groundY = 0; // ground height
+let isOnGround = false;
+
 const loader = new THREE.GLTFLoader();
 loader.load(
   'models/player.glb',

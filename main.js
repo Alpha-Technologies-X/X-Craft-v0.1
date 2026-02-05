@@ -114,6 +114,16 @@ function animate() {
     if (keys['a']) player.position.addScaledVector(right, -speed);
     if (keys['d']) player.position.addScaledVector(right, speed);
 
+    document.addEventListener('keydown', (e) => {
+  keys[e.key.toLowerCase()] = true;
+
+  // Jump
+  if (e.key === ' ' && isOnGround && player) {
+    velocityY = jumpStrength;
+    isOnGround = false;
+  }
+});
+
     // Rotate player body to face movement direction
     player.rotation.y = yaw;
   }

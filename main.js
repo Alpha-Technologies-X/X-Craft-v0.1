@@ -4,7 +4,6 @@
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
-// Menu
 const menu = document.getElementById('menu');
 const startBtn = document.getElementById('start');
 const canvas = document.getElementById('game');
@@ -15,27 +14,28 @@ startBtn.addEventListener('click', () => {
   menu.style.display = 'none';
   gameStarted = true;
 
-  // Delay pointer lock so browser allows it
   setTimeout(() => {
     document.body.requestPointerLock();
   }, 100);
 });
 
-// Camera
+// ============================
+// CAMERA & RENDERER
+// ============================
 const camera = new THREE.PerspectiveCamera(
   75,
   canvas.clientWidth / canvas.clientHeight,
   0.1,
   1000
 );
-camera.position.set(0, 2, 5);
 
-// Renderer
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+const renderer = new THREE.WebGLRenderer({
+  canvas,
+  antialias: true
+});
 renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 renderer.setPixelRatio(window.devicePixelRatio);
 
-// Resize fix
 window.addEventListener('resize', () => {
   camera.aspect = canvas.clientWidth / canvas.clientHeight;
   camera.updateProjectionMatrix();
@@ -43,27 +43,27 @@ window.addEventListener('resize', () => {
 });
 
 // ============================
-// LIGHTING
+// LIGHTING (IMPORTANT)
 // ============================
-scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
-const sun = new THREE.DirectionalLight(0xffffff, 1);
-sun.position.set(10, 20, 10);
+const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+sun.position.set(20, 40, 20);
 scene.add(sun);
 
 // ============================
 // TEXTURES & BLOCK MATERIALS
 // ============================
-const textureLoader = new THREE.TextureLoader();
+const texLoader = new THREE.TextureLoader();
 
 function loadTex(path) {
-  const t = textureLoader.load(path);
+  const t = texLoader.load(path);
   t.magFilter = THREE.NearestFilter;
   t.minFilter = THREE.NearestFilter;
   return t;
 }
 
-const BLOCK_MATERIALS = {
+const BLOCK_MATS = {
   grass: [
     new THREE.MeshStandardMaterial({ map: loadTex('textures/grass_side.png') }),
     new THREE.MeshStandardMaterial({ map: loadTex('textures/grass_side.png') }),
@@ -72,8 +72,7 @@ const BLOCK_MATERIALS = {
     new THREE.MeshStandardMaterial({ map: loadTex('textures/grass_side.png') }),
     new THREE.MeshStandardMaterial({ map: loadTex('textures/grass_side.png') })
   ],
-  dirt: new THREE.MeshStandardMaterial({ map: loadTex('textures/dirt.png') }),
-  stone: new THREE.MeshStandardMaterial({ map: loadTex('textures/stone.png') })
+  dirt: new THREE.MeshStandardMaterial({ map: loadTex('textures/dirt.png') })
 };
 
 // ============================
@@ -83,7 +82,7 @@ const blocks = [];
 const blockGeo = new THREE.BoxGeometry(1, 1, 1);
 
 function createBlock(type, x, y, z) {
-  const block = new THREE.Mesh(blockGeo, BLOCK_MATERIALS[type]);
+  const block = new THREE.Mesh(blockGeo, BLOCK_MATS[type]);
   block.position.set(x + 0.5, y + 0.5, z + 0.5);
   block.userData.type = type;
   scene.add(block);
@@ -91,22 +90,34 @@ function createBlock(type, x, y, z) {
 }
 
 // ============================
-// GENERATE WORLD
+// WORLD GENERATION
 // ============================
 for (let x = -10; x < 10; x++) {
   for (let z = -10; z < 10; z++) {
     createBlock('grass', x, 0, z);
     createBlock('dirt', x, -1, z);
-    createBlock('stone', x, -2, z);
   }
 }
 
 // ============================
-// PLAYER (placeholder cube for now)
+// PLAYER (LOGICAL BODY)
 // ============================
 const player = new THREE.Object3D();
 player.position.set(0, 2, 0);
 scene.add(player);
+
+// ============================
+// CHEST (GLB MODEL)
+// ============================
+const gltfLoader = new THREE.GLTFLoader();
+let chest;
+
+gltfLoader.load('models/Chest.glb', (gltf) => {
+  chest = gltf.scene;
+  chest.scale.set(0.8, 0.8, 0.8);
+  chest.position.set(2, 1, 2);
+  scene.add(chest);
+});
 
 // ============================
 // CONTROLS
@@ -115,7 +126,7 @@ const keys = {};
 document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
 document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-// Mouse look
+// Mouse look (FIXED)
 let yaw = 0;
 let pitch = 0;
 
@@ -124,7 +135,7 @@ document.addEventListener('mousemove', e => {
 
   yaw -= e.movementX * 0.002;
   pitch -= e.movementY * 0.002;
-  pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
+  pitch = Math.max(-1.4, Math.min(1.4, pitch));
 });
 
 // ============================
@@ -153,7 +164,7 @@ function animate() {
     return;
   }
 
-  // Gravity
+  // ---- GRAVITY ----
   velocityY += gravity;
   player.position.y += velocityY;
 
@@ -163,7 +174,7 @@ function animate() {
     onGround = true;
   }
 
-  // Movement
+  // ---- MOVEMENT ----
   const speed = 0.08;
   const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
   const right = new THREE.Vector3(Math.sin(yaw + Math.PI / 2), 0, Math.cos(yaw + Math.PI / 2));
@@ -173,13 +184,21 @@ function animate() {
   if (keys['a']) player.position.addScaledVector(right, -speed);
   if (keys['d']) player.position.addScaledVector(right, speed);
 
-  // Camera
+  // Rotate player body (camera follows)
+  player.rotation.y = yaw;
+
+  // ---- CAMERA FOLLOW (FIXED) ----
   camera.position.set(
     player.position.x,
     player.position.y + 1.6,
     player.position.z
   );
-  camera.rotation.set(pitch, yaw, 0);
+
+  camera.lookAt(
+    player.position.x + Math.sin(yaw),
+    player.position.y + 1.6 + Math.sin(pitch),
+    player.position.z + Math.cos(yaw)
+  );
 
   renderer.render(scene, camera);
 }

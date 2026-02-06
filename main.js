@@ -1,47 +1,41 @@
-// ===== BASIC SETUP =====
+// ================= BASIC SETUP =================
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87ceeb);
+scene.background = new THREE.Color(0x87ceeb); // sky blue
 
 const canvas = document.getElementById("game");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 
 const camera = new THREE.PerspectiveCamera(
   75,
-  window.innerWidth / window.innerHeight,
+  canvas.clientWidth / canvas.clientHeight,
   0.1,
   1000
 );
-camera.position.set(0, 3, 8);
+camera.position.set(0, 2, 5);
 
-// ===== MENU =====
+// ================= MENU =================
 const menu = document.getElementById("menu");
 const startBtn = document.getElementById("start");
 let gameStarted = false;
 
-startBtn.onclick = () => {
+startBtn.addEventListener("click", () => {
   menu.style.display = "none";
   gameStarted = true;
   document.body.requestPointerLock();
-};
+});
 
-// ===== LIGHTING =====
-scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+// ================= LIGHTING =================
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
 const sun = new THREE.DirectionalLight(0xffffff, 1);
 sun.position.set(10, 20, 10);
 scene.add(sun);
 
-const testCube = new THREE.Mesh(
-  new THREE.BoxGeometry(1, 1, 1),
-  new THREE.MeshStandardMaterial({ color: 0xff0000 })
-);
-testCube.position.set(0, 1, -5);
-scene.add(testCube);
-
-// ===== TEXTURES =====
+// ================= TEXTURES =================
 const texLoader = new THREE.TextureLoader();
+
 const grassTop = texLoader.load("textures/grass_top.png");
 const grassSide = texLoader.load("textures/grass_side.png");
 const dirtTex = texLoader.load("textures/dirt.png");
@@ -52,39 +46,39 @@ const sandTex = texLoader.load("textures/sand.png");
   t.minFilter = THREE.NearestFilter;
 });
 
-// ===== BLOCK FACTORY =====
+// ================= BLOCK FACTORY =================
 function createBlock(type, x, y, z) {
   const geo = new THREE.BoxGeometry(1, 1, 1);
-  let mats;
+  let mat;
 
   if (type === "grass") {
-    mats = [
-      new THREE.MeshStandardMaterial({ map: grassSide }),
-      new THREE.MeshStandardMaterial({ map: grassSide }),
-      new THREE.MeshStandardMaterial({ map: grassTop }),
-      new THREE.MeshStandardMaterial({ map: dirtTex }),
-      new THREE.MeshStandardMaterial({ map: grassSide }),
-      new THREE.MeshStandardMaterial({ map: grassSide })
+    mat = [
+      new THREE.MeshStandardMaterial({ map: grassSide }), // right
+      new THREE.MeshStandardMaterial({ map: grassSide }), // left
+      new THREE.MeshStandardMaterial({ map: grassTop }),  // top
+      new THREE.MeshStandardMaterial({ map: dirtTex }),   // bottom
+      new THREE.MeshStandardMaterial({ map: grassSide }), // front
+      new THREE.MeshStandardMaterial({ map: grassSide })  // back
     ];
   } else if (type === "dirt") {
-    mats = new THREE.MeshStandardMaterial({ map: dirtTex });
+    mat = new THREE.MeshStandardMaterial({ map: dirtTex });
   } else if (type === "sand") {
-    mats = new THREE.MeshStandardMaterial({ map: sandTex });
+    mat = new THREE.MeshStandardMaterial({ map: sandTex });
   }
 
-  const block = new THREE.Mesh(geo, mats);
+  const block = new THREE.Mesh(geo, mat);
   block.position.set(x, y, z);
   scene.add(block);
 }
 
-// ===== WORLD GENERATION =====
+// ================= WORLD GENERATION =================
 for (let x = -10; x <= 10; x++) {
   for (let z = -10; z <= 10; z++) {
     createBlock("grass", x, 0, z);
   }
 }
 
-// ===== PLAYER =====
+// ================= PLAYER =================
 let player;
 const loader = new THREE.GLTFLoader();
 
@@ -95,7 +89,7 @@ loader.load("models/player.glb", gltf => {
   scene.add(player);
 });
 
-// ===== CHEST =====
+// ================= CHEST =================
 loader.load("models/Chest.glb", gltf => {
   const chest = gltf.scene;
   chest.position.set(3, 1, 3);
@@ -103,12 +97,20 @@ loader.load("models/Chest.glb", gltf => {
   scene.add(chest);
 });
 
-// ===== CONTROLS =====
+// ================= CONTROLS =================
 const keys = {};
-document.addEventListener("keydown", e => (keys[e.key.toLowerCase()] = true));
-document.addEventListener("keyup", e => (keys[e.key.toLowerCase()] = false));
 
-// ===== MOUSE LOOK (FIXED) =====
+document.addEventListener("keydown", e => {
+  keys[e.key.toLowerCase()] = true;
+  if (e.code === "Space") keys.space = true;
+});
+
+document.addEventListener("keyup", e => {
+  keys[e.key.toLowerCase()] = false;
+  if (e.code === "Space") keys.space = false;
+});
+
+// ================= MOUSE LOOK =================
 let yaw = 0;
 let pitch = 0;
 
@@ -120,13 +122,13 @@ document.addEventListener("mousemove", e => {
   pitch = Math.max(-1.5, Math.min(1.5, pitch));
 });
 
-// ===== PHYSICS =====
+// ================= PHYSICS =================
 let velocityY = 0;
 const gravity = -0.015;
 const jumpPower = 0.35;
 let onGround = false;
 
-// ===== GAME LOOP =====
+// ================= GAME LOOP =================
 function animate() {
   requestAnimationFrame(animate);
 
@@ -147,20 +149,20 @@ function animate() {
     }
 
     // Jump
-    if (keys[" "] && onGround) {
+    if (keys.space && onGround) {
       velocityY = jumpPower;
       onGround = false;
     }
 
     // Movement
-    const speed = 0.05;
+    const speed = 0.06;
     const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
     const right = new THREE.Vector3(Math.sin(yaw + Math.PI / 2), 0, Math.cos(yaw + Math.PI / 2));
 
-    if (keys["w"]) player.position.addScaledVector(forward, speed);
-    if (keys["s"]) player.position.addScaledVector(forward, -speed);
-    if (keys["a"]) player.position.addScaledVector(right, -speed);
-    if (keys["d"]) player.position.addScaledVector(right, speed);
+    if (keys.w) player.position.addScaledVector(forward, speed);
+    if (keys.s) player.position.addScaledVector(forward, -speed);
+    if (keys.a) player.position.addScaledVector(right, -speed);
+    if (keys.d) player.position.addScaledVector(right, speed);
 
     // Camera follow
     camera.position.set(
@@ -178,9 +180,9 @@ function animate() {
 
 animate();
 
-// ===== RESIZE =====
+// ================= RESIZE =================
 window.addEventListener("resize", () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.aspect = canvas.clientWidth / canvas.clientHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 });

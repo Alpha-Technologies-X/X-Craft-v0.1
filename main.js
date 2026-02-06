@@ -33,6 +33,13 @@ const sun = new THREE.DirectionalLight(0xffffff, 1);
 sun.position.set(10, 20, 10);
 scene.add(sun);
 
+const testCube = new THREE.Mesh(
+  new THREE.BoxGeometry(1, 1, 1),
+  new THREE.MeshStandardMaterial({ color: 0xff0000 })
+);
+testCube.position.set(0, 1, -5);
+scene.add(testCube);
+
 // ===== TEXTURES =====
 const texLoader = new THREE.TextureLoader();
 const grassTop = texLoader.load("textures/grass_top.png");
